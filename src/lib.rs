@@ -1,14 +1,17 @@
 use std::f32::consts::*;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 use bevy_rapier3d::prelude::*;
 use bevy_vox_mesh::VoxMeshPlugin;
 
 #[macro_use]
 mod macros;
+mod material_test;
 mod net;
 mod serde_test;
+mod volume_editor;
 
 pub fn core_main() {
     App::default()
@@ -16,14 +19,23 @@ pub fn core_main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(DebugLinesPlugin::default())
+        .add_plugin(EguiPlugin)
         .add_plugin(VoxMeshPlugin::default())
-        .add_plugin(net::NetPlugin::default())
+        .add_plugin(net::NetPlugin)
+        .add_plugin(material_test::MaterialTestPlugin)
         .add_startup_system(setup_vox_mesh)
         .add_startup_system(setup_physics)
         // .add_startup_system(setup_animation)
         .add_system(draw_world_debug_lines)
         .add_system(apply_force_at_raycast)
+        .add_system(ui_example)
         .run();
+}
+
+fn ui_example(mut egui_context: ResMut<EguiContext>) {
+    egui::Window::new("Hello").show(egui_context.ctx_mut(), |ui| {
+        ui.label("world");
+    });
 }
 
 fn draw_world_debug_lines(mut lines: ResMut<DebugLines>) {
