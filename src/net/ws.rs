@@ -12,29 +12,26 @@ use crate::net::NetMsg;
 use super::InboundNetMsg;
 
 #[derive(Default)]
-pub struct NetWasmPlugin;
+pub struct NetWsPlugin;
 
 #[derive(Default, Resource)]
-pub struct WasmWebsocket {
+pub struct NetWs {
     // ws: WebSocket,
     receiver: Option<Arc<Mutex<mpsc::Receiver<NetMsg>>>>,
 }
 
-impl Plugin for NetWasmPlugin {
+impl Plugin for NetWsPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<WasmWebsocket>()
+        app.init_resource::<NetWs>()
             .add_event::<InboundNetMsg>()
             .add_startup_system(setup)
             .add_system(dispatch_mpsc_events);
     }
 }
 
-fn setup(
-    mut wasm_websocket: ResMut<WasmWebsocket>,
-    // mut writer: EventWriter<IncomingMsg>,
-) {
+fn setup(mut ws: ResMut<NetWs>) {
     let (sender, receiver) = mpsc::channel();
-    wasm_websocket.receiver = Some(Arc::new(Mutex::new(receiver)));
+    ws.receiver = Some(Arc::new(Mutex::new(receiver)));
 
     let ws = WebSocket::new("wss://echo.websocket.events").expect("websocket should connect");
     ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
@@ -78,11 +75,8 @@ fn setup(
     onopen_callback.forget();
 }
 
-fn dispatch_mpsc_events(
-    wasm_websocket: Res<WasmWebsocket>,
-    mut writer: EventWriter<InboundNetMsg>,
-) {
-    if let Some(receiver) = &wasm_websocket.receiver {
+fn dispatch_mpsc_events(ws: Res<NetWs>, mut writer: EventWriter<InboundNetMsg>) {
+    if let Some(receiver) = &ws.receiver {
         let receiver = receiver.lock().expect("lock mpsc websocket receiver mutex");
         writer.send_batch(receiver.try_iter().map(|msg| InboundNetMsg(msg)));
     }

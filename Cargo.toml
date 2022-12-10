@@ -7,15 +7,15 @@ version = "0.1.0"
 
 [dependencies]
 bevy = { version = "0.9" }
+bevy_egui = "0.17.1"
 bevy_prototype_debug_lines = { version = "0.9", features = ["3d"] }
 bevy_rapier3d = { version = "0.19", features = ["debug-render"] }
-bevy_vox_mesh = { git = "https://github.com/AThilenius/bevy_vox_mesh.git" }
+bevy_vox_mesh = "0.5.0"
+egui = "0.19"
+js-sys = "0.3"
 rmp-serde = "1.1.1"
 ron = "0.8"
 serde = "1.0"
-
-# [target.'cfg(target_arch = "wasm32")'.dependencies]
-js-sys = "0.3"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = [

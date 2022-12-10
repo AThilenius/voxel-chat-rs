@@ -1,3 +1,17 @@
 {
-  "cSpell.words": ["angvel", "Arraybuffer", "errid", "hrpc", "prost", "raycast"]
+  "cSpell.words": [
+    "angvel",
+    "Arraybuffer",
+    "Egui",
+    "errid",
+    "hrpc",
+    "Icosphere",
+    "pathfinding",
+    "prost",
+    "raycast",
+    "Raycasts",
+    "STANDARDMATERIAL",
+    "stdmats",
+    "wgsl"
+  ]
 }
