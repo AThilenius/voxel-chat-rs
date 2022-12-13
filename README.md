@@ -9,9 +9,9 @@ This project is very early in development.
 ## Running
 
 ```sh
+# Install Trunk
+cargo install --locked trunk
+
 # For WASM, use trunk: cargo install --locked trunk
 trunk serve
-
-# It supports native as well, but Bevy won't launch out of WSL2
-cargo run
 ```

@@ -1,19 +1,14 @@
 use bevy::prelude::*;
 
-// #[cfg(target_arch = "wasm32")]
-mod net_wasm;
+mod ws;
 
-// #[cfg(target_arch = "wasm32")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Default)]
 pub struct NetPlugin;
 
 impl Plugin for NetPlugin {
     fn build(&self, app: &mut App) {
-        app
-            // #[cfg(target_arch = "wasm32")]
-            .add_plugin(net_wasm::NetWasmPlugin::default())
+        app.add_plugin(ws::NetWsPlugin::default())
             .add_system(sample_consumer);
     }
 }
