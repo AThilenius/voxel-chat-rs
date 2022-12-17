@@ -8,6 +8,7 @@ use bevy_vox_mesh::VoxMeshPlugin;
 
 #[macro_use]
 mod macros;
+mod editor;
 mod material_test;
 mod net;
 mod serde_test;
