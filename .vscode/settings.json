@@ -1,19 +1,18 @@
 {
   "cSpell.words": [
-    "AABB",
     "angvel",
     "Arraybuffer",
     "Egui",
     "errid",
     "hrpc",
     "Icosphere",
-    "linearize",
+    "ilattice",
+    "ndshape",
     "pathfinding",
     "prost",
     "raycast",
     "Raycasts",
-    "STANDARDMATERIAL",
-    "stdmats",
-    "wgsl"
+    "serde",
+    "stdmats"
   ]
 }

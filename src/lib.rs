@@ -5,10 +5,12 @@ use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 use bevy_rapier3d::prelude::*;
 use bevy_vox_mesh::VoxMeshPlugin;
+use grid_tree_test::GridTreeTestPlugin;
 
 #[macro_use]
 mod macros;
 mod editor;
+mod grid_tree_test;
 mod material_test;
 mod net;
 mod serde_test;
@@ -23,6 +25,7 @@ pub fn core_main() {
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
         .add_plugin(VoxMeshPlugin::default())
+        .add_plugin(GridTreeTestPlugin)
         // .add_plugin(net::NetPlugin)
         .add_plugin(material_test::MaterialTestPlugin)
         .add_startup_system(setup_world_and_camera)
