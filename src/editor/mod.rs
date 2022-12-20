@@ -1,10 +1,8 @@
 use bevy::prelude::*;
 
 mod buffer;
-mod coords;
 
 use buffer::*;
-use coords::*;
 
 #[derive(Resource)]
 pub struct EditorResource {

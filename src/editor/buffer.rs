@@ -1,4 +1,4 @@
-use super::coords::{ChunkCoord, LocalCoord, WorldCoord, COUNT};
+use crate::voxel::{ChunkCoord, LocalCoord, PbrProps, Volume, WorldCoord, COUNT};
 
 /// A buffer of voxels, stored in chunks. Used exclusively by the editor.
 #[derive(Default, Clone)]
@@ -8,27 +8,18 @@ pub struct Buffer {
     pub chunks: im::HashMap<ChunkCoord, Chunk>,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct Mat {
-    pub color: u32,
-    pub metallic: u8,
-    pub roughness: u8,
-    pub reflectance: u8,
-    pub emission: u32,
-}
-
 // 32*32*32*11 bytes = 360 KB chunks
 #[derive(Clone)]
 pub struct Chunk {
     /// Voxels, linearized via `LocalCoord::linearize`.
-    pub voxels: Vec<Mat>,
+    pub voxels: Vec<PbrProps>,
 
     /// Count of non-empty (all zero) voxels. Used for compacting.
     pub count: usize,
 }
 
 impl Buffer {
-    pub fn get<T>(&self, c: T) -> Mat
+    pub fn get<T>(&self, c: T) -> PbrProps
     where
         T: Into<WorldCoord>,
     {
@@ -39,7 +30,7 @@ impl Buffer {
             .map_or(Default::default(), |c| c.get(&coord))
     }
 
-    pub fn set<T>(&mut self, c: T, cell: Mat)
+    pub fn set<T>(&mut self, c: T, cell: PbrProps)
     where
         T: Into<WorldCoord>,
     {
@@ -59,7 +50,7 @@ impl Buffer {
 
 impl Chunk {
     #[inline(always)]
-    pub fn get<T>(&self, c: T) -> Mat
+    pub fn get<T>(&self, c: T) -> PbrProps
     where
         T: Into<LocalCoord>,
     {
@@ -69,7 +60,7 @@ impl Chunk {
     }
 
     #[inline(always)]
-    pub fn set<T>(&mut self, c: T, mat: Mat)
+    pub fn set<T>(&mut self, c: T, mat: PbrProps)
     where
         T: Into<LocalCoord>,
     {
@@ -94,4 +85,14 @@ impl Default for Chunk {
             count: Default::default(),
         }
     }
+}
+
+impl From<&Volume> for Buffer {
+    fn from(volume: &Volume) -> Self {
+        // Find the volume's AABB
+    }
+}
+
+impl From<&Buffer> for Volume {
+    fn from(buffer: &Buffer) -> Self {}
 }

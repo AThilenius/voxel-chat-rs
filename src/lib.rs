@@ -13,6 +13,7 @@ mod material_test;
 mod net;
 mod serde_test;
 mod volume_editor;
+mod voxel;
 
 pub fn core_main() {
     App::default()
