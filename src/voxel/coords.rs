@@ -120,14 +120,67 @@ impl LocalCoord {
 
     #[inline(always)]
     pub fn linearize(&self) -> usize {
-        (self.0.x as usize) + (self.0.y as usize)
-            << LN_SIZE + (self.0.z as usize)
-            << (LN_SIZE << LN_SIZE)
+        (self.0.x as usize)
+            + ((self.0.y as usize) << LN_SIZE)
+            + (((self.0.z as usize) << LN_SIZE) << LN_SIZE)
     }
 }
 
 impl WorldCoordOffset {
     pub fn to_cell_coord(&self, anchor: WorldCoord) -> WorldCoord {
         WorldCoord(anchor.0 + self.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_world_to_chunk_coord() {
+        let c = WorldCoord(IVec3::new(0, 0, 0));
+        assert_eq!(ChunkCoord::from(c), ChunkCoord(IVec3::new(0, 0, 0)));
+
+        let c = WorldCoord(IVec3::new(-1, -1, -1));
+        assert_eq!(ChunkCoord::from(c), ChunkCoord(IVec3::new(-1, -1, -1)));
+
+        let c = WorldCoord(IVec3::new(31, 31, 31));
+        assert_eq!(ChunkCoord::from(c), ChunkCoord(IVec3::new(0, 0, 0)));
+
+        let c = WorldCoord(IVec3::new(32, 32, 32));
+        assert_eq!(ChunkCoord::from(c), ChunkCoord(IVec3::new(1, 1, 1)));
+    }
+
+    #[test]
+    fn test_chunk_coord() {
+        let c = ChunkCoord(IVec3::new(0, 0, 0));
+        assert_eq!(c.first_cell_coord(), WorldCoord(IVec3::new(0, 0, 0)));
+        assert_eq!(c.last_cell_coord(), WorldCoord(IVec3::new(31, 31, 31)));
+
+        let c = ChunkCoord(IVec3::new(-1, -1, -1));
+        assert_eq!(c.first_cell_coord(), WorldCoord(IVec3::new(-32, -32, -32)));
+        assert_eq!(c.last_cell_coord(), WorldCoord(IVec3::new(-1, -1, -1)));
+
+        let c = ChunkCoord(IVec3::new(10, 10, 10));
+        assert_eq!(c.first_cell_coord(), WorldCoord(IVec3::new(320, 320, 320)));
+        assert_eq!(c.last_cell_coord(), WorldCoord(IVec3::new(351, 351, 351)));
+    }
+
+    #[test]
+    fn test_local_coord() {
+        let c = LocalCoord(UVec3::new(0, 0, 0));
+        assert_eq!(c.linearize(), 0);
+
+        let c = LocalCoord(UVec3::new(1, 0, 0));
+        assert_eq!(c.linearize(), 1);
+
+        let c = LocalCoord(UVec3::new(0, 1, 0));
+        assert_eq!(c.linearize(), 32);
+
+        let c = LocalCoord(UVec3::new(0, 0, 1));
+        assert_eq!(c.linearize(), 1024);
+
+        let c = LocalCoord(UVec3::new(1, 1, 1));
+        assert_eq!(c.linearize(), 1057);
     }
 }

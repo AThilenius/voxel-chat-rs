@@ -8,7 +8,4 @@ impl Plugin for GridTreeTestPlugin {
     }
 }
 
-pub fn setup(// mut commands: Commands,
-) {
-    trace!("Hello")
-}
+pub fn setup() {}

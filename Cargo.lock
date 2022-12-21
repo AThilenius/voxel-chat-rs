@@ -984,7 +984,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3c0345520b5aa77d7d154bd578a18e7a974350931b5f41f641a7844e951b978f"
 dependencies = [
- "ilattice 0.1.0",
+ "ilattice",
  "ndcopy",
  "ndshape",
 ]
@@ -1729,12 +1729,6 @@ checksum = "2b8509e6791516e81c1a630d0bd7fbac36d2fa8712a9da8662e716b52d5051ca"
 
 [[package]]
 name = "glam"
-version = "0.21.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "518faa5064866338b013ff9b2350dc318e14cc4fcd6cb8206d7e7c9886c98815"
-
-[[package]]
-name = "glam"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "12f597d56c1bd55a811a1be189459e8fad2bbc272616375602443bdfb37fa774"
@@ -1847,19 +1841,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "grid-tree"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da82c21770faaafa9a2ab2923104878d088c9c6a5fa4172f0380dd086d2d7152"
-dependencies = [
- "ahash 0.8.2",
- "glam 0.21.3",
- "ndshape",
- "slab",
- "smallvec",
-]
-
-[[package]]
 name = "guillotiere"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1944,15 +1925,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f3db9046391c0e0658a18e23877706d16e48cc8b4711702b9f703776410c2b84"
 dependencies = [
  "glam 0.19.0",
-]
-
-[[package]]
-name = "ilattice"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce55d0e71656d7cfdd1de9d80c48129d9fff141575b95647b3f9adbee947f5dc"
-dependencies = [
- "glam 0.21.3",
 ]
 
 [[package]]
@@ -3676,11 +3648,8 @@ dependencies = [
  "bevy_vox_mesh",
  "block-mesh",
  "egui",
- "grid-tree",
- "ilattice 0.2.0",
  "im",
  "js-sys",
- "ndshape",
  "rmp-serde",
  "ron",
  "serde",

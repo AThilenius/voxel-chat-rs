@@ -29,11 +29,8 @@ web-sys = { version = "0.3", features = [
   "WebSocket",
 ] }
 
-grid-tree = "0.2"
 smooth-bevy-cameras = "0.6"
 block-mesh = "0.2"
-ndshape = "0.3"
-ilattice = "0.2"
 
 
 [profile.dev]

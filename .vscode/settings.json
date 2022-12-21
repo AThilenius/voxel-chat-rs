@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "AABB",
     "angvel",
     "Arraybuffer",
     "Egui",
@@ -7,12 +8,14 @@
     "hrpc",
     "Icosphere",
     "ilattice",
+    "linearize",
     "ndshape",
     "pathfinding",
     "prost",
     "raycast",
     "Raycasts",
     "serde",
-    "stdmats"
+    "stdmats",
+    "uvec"
   ]
 }

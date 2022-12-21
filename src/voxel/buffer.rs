@@ -1,10 +1,20 @@
-use crate::voxel::{ChunkCoord, LocalCoord, PbrProps, Volume, WorldCoord, COUNT};
+use bevy::prelude::*;
 
-/// A buffer of voxels, stored in chunks. Used exclusively by the editor.
+use crate::voxel::{ChunkCoord, LocalCoord, PbrProps, WorldCoord, COUNT};
+
+/// An arbitrarily sized buffer of voxels, stored in 32x32x32 chunks. Chunks are stored in an
+/// immutable hashmap, meaning they are stored copy-on-write. This allows Buffers to be very cheaply
+/// cloned and mutated.
+///
+/// Note on random-access performance:
+/// Buffers are 'fast enough' for my use case, but each get/set incurs a hash lookup to find the
+/// correct chunk. This can be reduced later if I need, but storing chunks in a contiguous array
+/// with a lookup index separate.
 #[derive(Default, Clone)]
 pub struct Buffer {
     /// Chunks are Copy On Write, so cloning an entire buffer is cheap and mutations are only as
-    /// expensive as the number of changes made.
+    /// expensive as the number of changes made. Chunks are GCed immediately when the non-default
+    /// voxel count hits zero.
     pub chunks: im::HashMap<ChunkCoord, Chunk>,
 }
 
@@ -37,14 +47,37 @@ impl Buffer {
         let coord: WorldCoord = c.into();
         let chunk_coord: ChunkCoord = coord.into();
 
-        self.chunks
+        let chunk = self
+            .chunks
             .entry(chunk_coord)
-            .or_insert_with(|| Default::default())
-            .set(coord, cell);
+            .or_insert_with(|| Default::default());
+
+        chunk.set(coord, cell);
+
+        if chunk.count == 0 {
+            self.chunks.remove(&chunk_coord);
+        }
     }
 
     pub fn count(&self) -> usize {
         self.chunks.values().map(|c| c.count).sum()
+    }
+
+    pub fn chunk_aabb(&self) -> (ChunkCoord, ChunkCoord) {
+        let mut min = ChunkCoord(IVec3::new(std::i32::MAX, std::i32::MAX, std::i32::MAX));
+        let mut max = ChunkCoord(IVec3::new(std::i32::MIN, std::i32::MIN, std::i32::MIN));
+
+        for (coord, _) in self.chunks.iter() {
+            min.0.x = min.0.x.min(coord.0.x);
+            min.0.y = min.0.y.min(coord.0.y);
+            min.0.z = min.0.z.min(coord.0.z);
+
+            max.0.x = max.0.x.max(coord.0.x);
+            max.0.y = max.0.y.max(coord.0.y);
+            max.0.z = max.0.z.max(coord.0.z);
+        }
+
+        (min, max)
     }
 }
 
@@ -85,14 +118,4 @@ impl Default for Chunk {
             count: Default::default(),
         }
     }
-}
-
-impl From<&Volume> for Buffer {
-    fn from(volume: &Volume) -> Self {
-        // Find the volume's AABB
-    }
-}
-
-impl From<&Buffer> for Volume {
-    fn from(buffer: &Buffer) -> Self {}
 }
