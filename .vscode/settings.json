@@ -17,5 +17,9 @@
     "serde",
     "stdmats",
     "uvec"
+    "pathfinding",
+    "prost",
+    "raycast",
+    "Raycasts"
   ]
 }

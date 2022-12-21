@@ -1,6 +1,7 @@
 mod buffer;
 mod compressed_chunk;
 mod coords;
+mod tesselate;
 mod volume;
 
 pub use buffer::*;

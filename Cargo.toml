@@ -11,12 +11,15 @@ bevy_egui = "0.17.1"
 bevy_prototype_debug_lines = { version = "0.9", features = ["3d"] }
 bevy_rapier3d = { version = "0.19", features = ["debug-render"] }
 bevy_vox_mesh = "0.5.0"
+block-mesh = "0.2"
+hibitset = "0.6"
 im = "15.1"
 egui = "0.19"
 js-sys = "0.3"
 rmp-serde = "1.1.1"
 ron = "0.8"
 serde = "1.0"
+smooth-bevy-cameras = "0.6"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 web-sys = { version = "0.3", features = [
@@ -28,10 +31,6 @@ web-sys = { version = "0.3", features = [
   "ProgressEvent",
   "WebSocket",
 ] }
-
-smooth-bevy-cameras = "0.6"
-block-mesh = "0.2"
-
 
 [profile.dev]
 opt-level = 1
