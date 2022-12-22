@@ -15,11 +15,9 @@
     "raycast",
     "Raycasts",
     "serde",
+    "STANDARDMATERIAL",
     "stdmats",
-    "uvec"
-    "pathfinding",
-    "prost",
-    "raycast",
-    "Raycasts"
+    "uvec",
+    "wgsl"
   ]
 }

@@ -17,3 +17,9 @@ pub struct PbrProps {
     pub reflectance: u8,
     pub emission: u32,
 }
+
+impl PbrProps {
+    pub fn is_opaque(&self) -> bool {
+        !(self.color & 0xFF000000) == 0
+    }
+}

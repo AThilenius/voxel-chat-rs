@@ -1,11 +1,8 @@
 use bevy::{prelude::*, render::render_resource::PrimitiveTopology};
 use hibitset::BitSet;
+
+use super::{Buffer, PbrProps, LN_SIZE, WIDTH};
 use std::mem::swap;
-
-use super::{Buffer, WIDTH};
-
-const SLICE_VOXEL_COUNT: usize = WIDTH * WIDTH;
-type Slice = [u16; SLICE_VOXEL_COUNT];
 
 /// # Greedy meshing for an entire Buffer into a single mesh.
 ///
@@ -18,6 +15,8 @@ type Slice = [u16; SLICE_VOXEL_COUNT];
 ///
 /// Additionally, while meshing, the adjacent voxel (towards the face normal) is checked to see if
 /// it's opaque. Opaque voxels that occlude and entire quad will result in the quad being culled.
+///
+/// TODO: This next part isn't true... yet...
 /// However, opaque voxels that occlude only the middle part of a quad will NOT cull or split the
 /// quad. This reduces the number of verts, but can cause overdraw. To combat overdraw, quads should
 /// be meshed in a 'closest to furthest' order for each cardinal direction (ex, the +X direction
@@ -41,8 +40,78 @@ impl From<Buffer> for Mesh {
     }
 }
 
-fn mesh_2d_slice<F>(slice_opaque: F, normal_opaque: F)
-where
-    F: Fn(UVec2) -> bool,
+fn mesh_2d_slice<F>(
+    // Lambda that converts from 2D 'slice space' into 3D 'voxel space' in-plane with the slice
+    // currently being meshed.
+    slice_vst: F,
+
+    // Much like `slice_vst` but one slice 'back' (in the direction of the normal of the 2D slice).
+    normal_vst: F,
+) where
+    F: Fn(UVec2) -> PbrProps,
 {
+    // Negative mask; a set bit in the mask represents a voxel that cannot be meshed, or is already
+    // a member of another quad.
+    let mut mask = BitSet::with_capacity((WIDTH * WIDTH) as u32);
+
+    for v in 0..(WIDTH as u32) {
+        for u in 0..(WIDTH as u32) {
+            let i = (v << LN_SIZE) + u;
+
+            // Check if it's an already meshed voxel
+            if mask.contains(i) {
+                continue;
+            }
+
+            // The PbrProps type for this quad.
+            let p = slice_vst((u, v).into());
+
+            // Greedily consume first right, then upward, extending out the size of the quad as much
+            // as we can.
+            let mut quad_size = UVec2::ONE;
+
+            // Extend right as far as we can.
+            for u in u..(WIDTH as u32) {
+                let i = (v << LN_SIZE) + u;
+
+                if mask.contains(i)
+                    || slice_vst((u, v).into()) != p
+                    || normal_vst((u, v).into()).is_opaque()
+                {
+                    break;
+                }
+
+                mask.add(i);
+                quad_size.x += 1;
+            }
+
+            // Extend upward as far as we can (entire width has to fit each time)
+            'outer: for v in v..(WIDTH as u32) {
+                // First check that the entire width can be added. If it can't be, then we are done
+                // extending upward entirely.
+                for u in u..(u + quad_size.x) {
+                    let i = (v << LN_SIZE) + u;
+                    if mask.contains(i)
+                        || slice_vst((u, v).into()) != p
+                        || normal_vst((u, v).into()).is_opaque()
+                    {
+                        break 'outer;
+                    }
+                }
+
+                // It can be, add it in
+                for u in u..(u + quad_size.x) {
+                    let i = (v << LN_SIZE) + u;
+                    mask.add(i);
+                }
+
+                quad_size.y += 1;
+            }
+
+            // Done with the greedy part. We now have a quad that extends from uv to (uv +
+            // quad_size).
+        }
+    }
+
+    let test = slice_opaque(UVec2::ZERO);
 }
