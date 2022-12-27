@@ -3,10 +3,12 @@
     "AABB",
     "angvel",
     "Arraybuffer",
+    "BITAN",
     "Egui",
     "errid",
     "hrpc",
     "Icosphere",
+    "IDGAF",
     "ilattice",
     "linearize",
     "ndshape",
@@ -15,7 +17,12 @@
     "raycast",
     "Raycasts",
     "serde",
+    "Snorm",
+    "STANDARDMATERIAL",
     "stdmats",
-    "uvec"
+    "Tesselates",
+    "Unorm",
+    "uvec",
+    "wgsl"
   ]
 }

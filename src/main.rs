@@ -1,9 +1,10 @@
 use voxel_chat::core_main;
 
 // Thinking place...
-// Let's start with voxel editing and world-building. Don't make it fancy, just make it work.
+// Let's start with voxel editing and world-building.
 // - Initial voxel volume is stored roughly: RLN of 24-bit color components. Just use MsgPack for
 //   this. No PBR attributes yet (it requires some heavy Bevy rendering work).
+//   - Done, including PBR
 // - For MVP here, there are no animations or scripts. Just voxel data, rotation and translation.
 // - Scenes can be transitive, no? Each entity encodes any set of entities under it, each with their
 //   own translation, rotation and voxel data.

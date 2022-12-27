@@ -18,46 +18,36 @@ struct FragmentInput {
     @builtin(front_facing) is_front: bool,
     @builtin(position) frag_coord: vec4<f32>,
 
-    // Locations [0-4]
-    #import bevy_pbr::mesh_vertex_output
-
-    @location(5) metallic_roughness: vec2<f32>,
+    @location(0) world_position: vec4<f32>,
+    @location(1) world_normal: vec3<f32>,
+    @location(2) color: vec4<f32>,
+    @location(3) metallic: f32,
+    @location(4) roughness: f32,
+    @location(5) reflectance: f32,
     @location(6) emission: vec4<f32>,
-    @location(7) reflectance: f32,
 };
 
-// See: https://github.com/bevyengine/bevy/blob/main/crates/bevy_pbr/src/render/pbr.wgsl
 @fragment
 fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
     var pbr_input: PbrInput = pbr_input_new();
 
+    pbr_input.frag_coord = in.frag_coord;
     pbr_input.material.base_color = in.color;
+    pbr_input.material.metallic = in.metallic;
+    pbr_input.material.perceptual_roughness = in.roughness;
     pbr_input.material.reflectance = in.reflectance;
-    pbr_input.material.metallic = in.metallic_roughness.r;
-    pbr_input.material.perceptual_roughness = in.metallic_roughness.g;
     pbr_input.material.emissive = in.emission;
 
-    pbr_input.frag_coord = in.frag_coord;
     pbr_input.world_position = in.world_position;
-    pbr_input.world_normal = prepare_world_normal(
-        in.world_normal,
-        (pbr_input.material.flags & STANDARD_MATERIAL_FLAGS_DOUBLE_SIDED_BIT) != 0u,
-        in.is_front,
-    );
-
     pbr_input.is_orthographic = view.projection[3].w == 1.0;
-
+    pbr_input.world_normal = in.world_normal;
     pbr_input.N = apply_normal_mapping(
         pbr_input.material.flags,
-        pbr_input.world_normal,
-        in.world_tangent,
-        vec2<f32>(in.uv.x, 1.0 - in.uv.y),
+        pbr_input.world_normal
     );
-
     pbr_input.V = calculate_view(in.world_position, pbr_input.is_orthographic);
 
     var output_color = pbr(pbr_input);
-
     #ifdef TONEMAP_IN_SHADER
         output_color = tone_mapping(output_color);
     #endif

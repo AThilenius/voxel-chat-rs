@@ -92,6 +92,12 @@ impl WorldCoord {
             (chunk_coord.0.z << LN_SIZE) + z as i32,
         ))
     }
+
+    fn iter(a: WorldCoord, b: WorldCoord) -> impl Iterator<Item = WorldCoord> {
+        (a.0.z..=b.0.z)
+            .flat_map(move |z| (a.0.y..=b.0.y).map(move |y| (y, z)))
+            .flat_map(move |(y, z)| (a.0.x..=b.0.x).map(move |x| WorldCoord(IVec3::new(x, y, z))))
+    }
 }
 
 impl ChunkCoord {
@@ -109,6 +115,12 @@ impl ChunkCoord {
             (self.0.y << LN_SIZE) + WIDTH as i32 - 1,
             (self.0.z << LN_SIZE) + WIDTH as i32 - 1,
         ))
+    }
+
+    pub fn iter_world_coords(&self) -> impl Iterator<Item = WorldCoord> {
+        let first = self.first_cell_coord();
+        let last = self.last_cell_coord();
+        WorldCoord::iter(first, last)
     }
 }
 
