@@ -13,20 +13,6 @@ use bevy::{
 
 use super::{Buffer, WorldCoord};
 
-// Opaque vertex format, 14 bytes (I probably want to round up to 16)
-// position: [i16; 4]
-// color: [u8; 4] (normalized)
-// normal: u8 - Also the tangent, if it's needed
-// emission_alpha: u8 (normalized) - Color is `color.rgb`
-// metallic: u8 (normalized)
-// roughness: u8 (normalized)
-// reflectance: u8 (normalized)
-
-// position: [f32; 3] - Bevy builtin
-// normal: [u8; 4] NORM
-// color: [u8; 4] NORM
-// pbr: [u8; 4] NORM
-
 const ATTRIBUTE_COLOR_EMISSIVE: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Color_Emissive", 956190401, VertexFormat::Unorm8x4);
 
@@ -43,8 +29,8 @@ const NORM_TAN_BITAN: [(IVec3, IVec3, IVec3, IVec3); 6] = [
     (IVec3::ZERO, IVec3::NEG_Y, IVec3::X, IVec3::Z),
 ];
 
-impl From<Buffer> for Mesh {
-    fn from(buffer: Buffer) -> Self {
+impl From<&Buffer> for Mesh {
+    fn from(buffer: &Buffer) -> Self {
         let mut positions: Vec<IVec3> = Vec::new();
         let mut pbr_norm: Vec<[u8; 4]> = Vec::new();
         let mut color_emissive: Vec<[u8; 4]> = Vec::new();
@@ -59,17 +45,17 @@ impl From<Buffer> for Mesh {
                     continue;
                 }
 
-                // for (origin, norm, tan, bi_tan) in NORM_TAN_BITAN {
                 for (i, (origin, norm, tan, bi_tan)) in NORM_TAN_BITAN.into_iter().enumerate() {
                     if buffer.get(WorldCoord(coord + norm)) != default() {
                         continue;
                     }
 
                     // Quad will be meshed.
-                    let tan_shadow = buffer.get(WorldCoord(coord + tan)) == default();
-                    let neg_tan_shadow = buffer.get(WorldCoord(coord - tan)) == default();
-                    let bi_tan_shadow = buffer.get(WorldCoord(coord + bi_tan)) == default();
-                    let neg_bi_tan_shadow = buffer.get(WorldCoord(coord - bi_tan)) == default();
+                    let tan_shadow = buffer.get(WorldCoord(coord + norm + tan)) != default();
+                    let neg_tan_shadow = buffer.get(WorldCoord(coord + norm - tan)) != default();
+                    let bi_tan_shadow = buffer.get(WorldCoord(coord + norm + bi_tan)) != default();
+                    let neg_bi_tan_shadow =
+                        buffer.get(WorldCoord(coord + norm - bi_tan)) != default();
 
                     let ll_c = props.color.shadow(neg_tan_shadow, neg_bi_tan_shadow);
                     let lr_c = props.color.shadow(tan_shadow, neg_bi_tan_shadow);
@@ -128,11 +114,7 @@ impl From<Buffer> for Mesh {
 
 #[derive(AsBindGroup, Debug, Clone, TypeUuid)]
 #[uuid = "8cc0d9ab-e0ed-4a7d-b677-bbb8f0a00c41"]
-pub struct VoxelMaterial {
-    #[texture(1)]
-    #[sampler(2)]
-    pub normal_map_texture: Handle<Image>,
-}
+pub struct VoxelMaterial {}
 
 impl Material for VoxelMaterial {
     fn vertex_shader() -> ShaderRef {

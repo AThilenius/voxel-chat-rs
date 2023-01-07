@@ -4,13 +4,8 @@ use bevy::prelude::*;
 use bevy_egui::{EguiContext, EguiPlugin};
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 use bevy_rapier3d::prelude::*;
-use bevy_vox_mesh::VoxMeshPlugin;
-use grid_tree_test::GridTreeTestPlugin;
-use smooth_bevy_cameras::{
-    controllers::unreal::{UnrealCameraBundle, UnrealCameraController, UnrealCameraPlugin},
-    LookTransformPlugin,
-};
-use voxel::{Buffer, PbrProps, Rgba, VoxelMaterial, WorldCoord};
+use editor::EditorPlugin;
+use voxel::VoxelMaterial;
 
 #[macro_use]
 mod macros;
@@ -28,15 +23,13 @@ pub fn core_main() {
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
+        .add_plugin(EditorPlugin)
         // .add_plugin(VoxMeshPlugin::default())
-        .add_plugin(LookTransformPlugin)
-        .add_plugin(UnrealCameraPlugin::default())
         // .add_plugin(GridTreeTestPlugin)
         // .add_plugin(net::NetPlugin)
         // .add_plugin(material_test::MaterialTestPlugin)
         .add_startup_system(setup_world_and_camera)
         .add_plugin(MaterialPlugin::<VoxelMaterial>::default())
-        .add_startup_system(test_buffer_meshing)
         // .add_startup_system(setup_vox_mesh)
         // .add_startup_system(setup_physics)
         // .add_startup_system(setup_animation)
@@ -46,63 +39,29 @@ pub fn core_main() {
         .run();
 }
 
-fn test_buffer_meshing(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<VoxelMaterial>>,
-    asset_server: Res<AssetServer>,
-) {
-    let mut buffer = Buffer::default();
-    buffer.set(
-        WorldCoord((0, 0, 0).into()),
-        PbrProps {
-            color: Rgba::from(Color::rgb(1.0, 0.0, 0.0)),
-            metallic: 3,
-            roughness: 23,
-            reflectance: 128,
-            emission: 0,
-        },
-    );
-    let mesh: Mesh = buffer.into();
-    commands.spawn(MaterialMeshBundle {
-        mesh: meshes.add(mesh.clone()),
-        material: materials.add(VoxelMaterial {
-            normal_map_texture: asset_server.load("textures/normal_round.png"),
-        }),
-        transform: Transform::IDENTITY,
-        ..default()
-    });
-}
-
 fn setup_world_and_camera(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut stdmats: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands
-        .spawn((
-            Camera3dBundle {
-                camera: Camera {
-                    // hdr: true,
-                    ..default()
-                },
-                // projection: OrthographicProjection {
-                //     scale: 2.0,
-                //     scaling_mode: ScalingMode::FixedVertical(2.0),
-                //     ..default()
-                // }
-                // .into(),
-                transform: Transform::from_xyz(10.0, 5.0, 5.0)
-                    .looking_at(Vec3::new(2.0, 2.0, 0.0), Vec3::Y),
+    commands.spawn((
+        Camera3dBundle {
+            camera: Camera {
+                // hdr: true,
                 ..default()
             },
-            // BloomSettings::default(),
-        ))
-        .insert(UnrealCameraBundle::new(
-            UnrealCameraController::default(),
-            Vec3::new(-2.0, 5.0, 5.0),
-            Vec3::new(0., 0., 0.),
-        ));
+            // projection: OrthographicProjection {
+            //     scale: 2.0,
+            //     scaling_mode: ScalingMode::FixedVertical(2.0),
+            //     ..default()
+            // }
+            // .into(),
+            transform: Transform::from_xyz(10.0, 5.0, 5.0)
+                .looking_at(Vec3::new(2.0, 2.0, 0.0), Vec3::Y),
+            ..default()
+        },
+        // BloomSettings::default(),
+    ));
 
     commands.spawn(PointLightBundle {
         point_light: PointLight {

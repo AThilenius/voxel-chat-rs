@@ -4,12 +4,13 @@ mod buffer;
 mod compressed_chunk;
 mod coords;
 mod mesh;
-// mod quads;
+mod raycast;
 mod volume;
 
 pub use buffer::*;
 pub use coords::*;
 pub use mesh::*;
+pub use raycast::*;
 use serde::{Deserialize, Serialize};
 pub use volume::*;
 
@@ -44,16 +45,28 @@ impl Rgba {
         let mut g = self.g as f32 / u8::MAX as f32;
         let mut b = self.b as f32 / u8::MAX as f32;
 
+        // if sa {
+        //     r = r * 0.8;
+        //     g = g * 0.8;
+        //     b = b * 0.8;
+        // }
+
+        // if sb {
+        //     r = r * 0.8;
+        //     g = g * 0.8;
+        //     b = b * 0.8;
+        // }
+
         if sa {
-            r = r * 0.8;
-            g = g * 0.8;
-            b = b * 0.8;
+            r = 0.0;
+            g = 0.0;
+            b = 0.0;
         }
 
         if sb {
-            r = r * 0.8;
-            g = g * 0.8;
-            b = b * 0.8;
+            r = 0.0;
+            g = 0.0;
+            b = 0.0;
         }
 
         Rgba {
