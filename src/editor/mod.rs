@@ -24,7 +24,6 @@ fn setup_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<VoxelMaterial>>,
-    asset_server: Res<AssetServer>,
 ) {
     let mut buffer = Buffer::default();
     let p = PbrProps {

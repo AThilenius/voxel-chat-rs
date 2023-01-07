@@ -11,7 +11,7 @@ use bevy::{
     },
 };
 
-use super::{Buffer, WorldCoord};
+use super::{Buffer, FastBufferReader, WorldCoord};
 
 const ATTRIBUTE_COLOR_EMISSIVE: MeshVertexAttribute =
     MeshVertexAttribute::new("Vertex_Color_Emissive", 956190401, VertexFormat::Unorm8x4);
@@ -35,43 +35,48 @@ impl From<&Buffer> for Mesh {
         let mut pbr_norm: Vec<[u8; 4]> = Vec::new();
         let mut color_emissive: Vec<[u8; 4]> = Vec::new();
         let mut indexes: Vec<u32> = Vec::new();
+        let mut reader = FastBufferReader::new(buffer);
 
-        // TODO: This is heinously inefficient, but IDGAF right now.
         for chunk_coord in buffer.chunks.keys() {
             for WorldCoord(coord) in chunk_coord.iter_world_coords() {
-                let props = buffer.get(WorldCoord(coord));
+                let props = reader.get(WorldCoord(coord));
 
                 if props == default() {
                     continue;
                 }
 
                 for (i, (origin, norm, tan, bi_tan)) in NORM_TAN_BITAN.into_iter().enumerate() {
-                    if buffer.get(WorldCoord(coord + norm)) != default() {
+                    if reader.get(WorldCoord(coord + norm)) != default() {
                         continue;
                     }
 
-                    // Quad will be meshed.
-                    let tan_shadow = buffer.get(WorldCoord(coord + norm + tan)) != default();
-                    let neg_tan_shadow = buffer.get(WorldCoord(coord + norm - tan)) != default();
-                    let bi_tan_shadow = buffer.get(WorldCoord(coord + norm + bi_tan)) != default();
-                    let neg_bi_tan_shadow =
-                        buffer.get(WorldCoord(coord + norm - bi_tan)) != default();
+                    // The 8 surrounding voxels for fake ambient occlusion.
+                    let ao_c = coord + norm;
 
-                    let ll_c = props.color.shadow(neg_tan_shadow, neg_bi_tan_shadow);
-                    let lr_c = props.color.shadow(tan_shadow, neg_bi_tan_shadow);
-                    let ur_c = props.color.shadow(tan_shadow, bi_tan_shadow);
-                    let ul_c = props.color.shadow(neg_tan_shadow, bi_tan_shadow);
+                    let ao_r = reader.get(WorldCoord(ao_c + tan)).color.a != 0;
+                    let ao_l = reader.get(WorldCoord(ao_c - tan)).color.a != 0;
+                    let ao_u = reader.get(WorldCoord(ao_c + bi_tan)).color.a != 0;
+                    let ao_d = reader.get(WorldCoord(ao_c - bi_tan)).color.a != 0;
+                    let ao_ur = reader.get(WorldCoord(ao_c + tan + bi_tan)).color.a != 0;
+                    let ao_lr = reader.get(WorldCoord(ao_c + tan - bi_tan)).color.a != 0;
+                    let ao_ul = reader.get(WorldCoord(ao_c - tan + bi_tan)).color.a != 0;
+                    let ao_ll = reader.get(WorldCoord(ao_c - tan - bi_tan)).color.a != 0;
 
+                    // Now shadow the 4 corner colors
                     let p = coord + origin;
+                    let c_ll = props.color.shadow(ao_ll || ao_d || ao_l);
+                    let c_lr = props.color.shadow(ao_lr || ao_d || ao_r);
+                    let c_ur = props.color.shadow(ao_ur || ao_r || ao_u);
+                    let c_ul = props.color.shadow(ao_ul || ao_l || ao_u);
 
                     positions.extend([p, p + tan, p + tan + bi_tan, p + bi_tan]);
                     pbr_norm
                         .extend([[props.metallic, props.roughness, props.reflectance, i as u8]; 4]);
                     color_emissive.extend([
-                        [ll_c.r, ll_c.g, ll_c.b, props.emission],
-                        [lr_c.r, lr_c.g, lr_c.b, props.emission],
-                        [ur_c.r, ur_c.g, ur_c.b, props.emission],
-                        [ul_c.r, ul_c.g, ul_c.b, props.emission],
+                        [c_ll.r, c_ll.g, c_ll.b, props.emission],
+                        [c_lr.r, c_lr.g, c_lr.b, props.emission],
+                        [c_ur.r, c_ur.g, c_ur.b, props.emission],
+                        [c_ul.r, c_ul.g, c_ul.b, props.emission],
                     ]);
                     indexes.extend(
                         [0, 1, 2, 0, 2, 3]

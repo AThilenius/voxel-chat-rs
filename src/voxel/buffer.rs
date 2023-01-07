@@ -28,6 +28,12 @@ pub struct Chunk {
     pub count: usize,
 }
 
+pub struct FastBufferReader<'a> {
+    buffer: &'a Buffer,
+    chunk: Option<&'a Chunk>,
+    chunk_coord: Option<ChunkCoord>,
+}
+
 impl Buffer {
     pub fn get<T>(&self, c: T) -> PbrProps
     where
@@ -117,5 +123,31 @@ impl Default for Chunk {
             voxels: vec![Default::default(); COUNT],
             count: Default::default(),
         }
+    }
+}
+
+impl<'a> FastBufferReader<'a> {
+    pub fn new(buffer: &'a Buffer) -> Self {
+        Self {
+            buffer,
+            chunk: None,
+            chunk_coord: None,
+        }
+    }
+
+    pub fn get<T>(&mut self, c: T) -> PbrProps
+    where
+        T: Into<WorldCoord>,
+    {
+        let coord: WorldCoord = c.into();
+        let chunk_coord: ChunkCoord = coord.into();
+        let local_coord: LocalCoord = coord.into();
+
+        if self.chunk_coord != Some(chunk_coord) {
+            self.chunk_coord = Some(chunk_coord);
+            self.chunk = self.buffer.chunks.get(&chunk_coord);
+        }
+
+        self.chunk.map_or(default(), |c| c.get(local_coord))
     }
 }

@@ -36,44 +36,24 @@ impl Rgba {
         [self.r, self.g, self.b, self.a]
     }
 
-    pub fn shadow(&self, sa: bool, sb: bool) -> Self {
-        if !sa && !sb {
-            return self.clone();
-        }
-
-        let mut r = self.r as f32 / u8::MAX as f32;
-        let mut g = self.g as f32 / u8::MAX as f32;
-        let mut b = self.b as f32 / u8::MAX as f32;
-
-        // if sa {
-        //     r = r * 0.8;
-        //     g = g * 0.8;
-        //     b = b * 0.8;
-        // }
-
-        // if sb {
-        //     r = r * 0.8;
-        //     g = g * 0.8;
-        //     b = b * 0.8;
-        // }
-
+    pub fn shadow(&self, sa: bool) -> Self {
         if sa {
-            r = 0.0;
-            g = 0.0;
-            b = 0.0;
-        }
+            let mut r = self.r as f32 / u8::MAX as f32;
+            let mut g = self.g as f32 / u8::MAX as f32;
+            let mut b = self.b as f32 / u8::MAX as f32;
 
-        if sb {
-            r = 0.0;
-            g = 0.0;
-            b = 0.0;
-        }
+            r = r / 2.0;
+            g = g / 2.0;
+            b = b / 2.0;
 
-        Rgba {
-            r: f32::round(r * u8::MAX as f32) as u8,
-            g: f32::round(g * u8::MAX as f32) as u8,
-            b: f32::round(b * u8::MAX as f32) as u8,
-            a: self.a,
+            Rgba {
+                r: f32::round(r * u8::MAX as f32) as u8,
+                g: f32::round(g * u8::MAX as f32) as u8,
+                b: f32::round(b * u8::MAX as f32) as u8,
+                a: self.a,
+            }
+        } else {
+            return self.clone();
         }
     }
 }
