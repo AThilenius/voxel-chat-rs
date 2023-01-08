@@ -28,6 +28,8 @@ pub struct Chunk {
     pub count: usize,
 }
 
+/// A facade to a Buffer for iterating voxels in world space. Reduces the number of hashmap lookups
+/// by keeping a reference to the last accessed chunk.
 pub struct FastBufferReader<'a> {
     buffer: &'a Buffer,
     chunk: Option<&'a Chunk>,

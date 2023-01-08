@@ -3,8 +3,7 @@ use voxel_chat::core_main;
 // Thinking place...
 // Let's start with voxel editing and world-building.
 // - Initial voxel volume is stored roughly: RLN of 24-bit color components. Just use MsgPack for
-//   this. No PBR attributes yet (it requires some heavy Bevy rendering work).
-//   - Done, including PBR
+//   this.
 // - For MVP here, there are no animations or scripts. Just voxel data, rotation and translation.
 // - Scenes can be transitive, no? Each entity encodes any set of entities under it, each with their
 //   own translation, rotation and voxel data.
@@ -17,11 +16,11 @@ use voxel_chat::core_main;
 // - VoxelModel: RLN voxel data (offset, bounded)
 //
 // Resources:
-// - VoxelMeshes: HashMap<Blake2 hash, bevy::Mesh>
+// - VoxelMeshes: HashMap<Blake2 hash, Handle<Mesh>>
 // - VoxelEditor: Singleton instance for all editing needs. Totally separate code-path from the rest
 //                of the voxel loading flow.
 //   - active_buffer (Buffer): The latest 'true' buffer (excludes ephemeral change buffers).
-//   - ephemeral_buffer (Buffer): Pending changes from the active_buffer (recreated each from from
+//   - ephemeral_buffer (Buffer): Pending changes from the active_buffer (recreated each frame from
 //     the active_buffer).
 //   - editor_state (EditorState): Contains any state that needs to be serialized and saved for
 //     convenience. This includes the color palette, registers, et. al.

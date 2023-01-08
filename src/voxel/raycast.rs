@@ -71,7 +71,6 @@ fn aabb_test_chunk_coord(chunk_coord: ChunkCoord, ray: Ray) -> Option<ChunkRayHi
 
     // If the origin is withing the chunk's bounds, then we return a hit at the origin point.
     if origin_i.cmpge(min_i).all() && origin_i.cmplt(max_i).all() {
-        info!("Within chunk bounds: {:?}", ray);
         return Some(ChunkRayHit {
             chunk_coord,
             t: OrderedFloat(0.0),
