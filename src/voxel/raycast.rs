@@ -61,7 +61,7 @@ fn raycast_chunk_coords(buffer: &Buffer, ray: Ray) -> Vec<ChunkRayHit> {
 /// This is relatively cheap to call.
 fn aabb_test_chunk_coord(chunk_coord: ChunkCoord, ray: Ray) -> Option<ChunkRayHit> {
     let min_i = chunk_coord.first_cell_coord().0;
-    let max_i = chunk_coord.last_cell_coord().0;
+    let max_i = chunk_coord.last_cell_coord().0 + IVec3::ONE;
     let min = min_i.as_vec3();
     let max = max_i.as_vec3();
     let mut t = Vec3::ZERO;
@@ -71,10 +71,11 @@ fn aabb_test_chunk_coord(chunk_coord: ChunkCoord, ray: Ray) -> Option<ChunkRayHi
 
     // If the origin is withing the chunk's bounds, then we return a hit at the origin point.
     if origin_i.cmpge(min_i).all() && origin_i.cmplt(max_i).all() {
+        info!("Within chunk bounds: {:?}", ray);
         return Some(ChunkRayHit {
             chunk_coord,
             t: OrderedFloat(0.0),
-            origin,
+            origin: origin - chunk_coord.first_cell_coord().0.as_vec3(),
             direction,
         });
     }
