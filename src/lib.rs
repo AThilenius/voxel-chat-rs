@@ -9,6 +9,7 @@ use voxel::VoxelMaterial;
 
 #[macro_use]
 mod macros;
+mod camera;
 mod editor;
 mod grid_tree_test;
 mod net;
@@ -24,6 +25,7 @@ pub fn core_main() {
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
         .add_plugin(EditorPlugin)
+        .add_plugin(camera::CameraPlugin)
         // .add_plugin(VoxMeshPlugin::default())
         // .add_plugin(GridTreeTestPlugin)
         // .add_plugin(net::NetPlugin)
@@ -44,25 +46,6 @@ fn setup_world_and_camera(
     mut meshes: ResMut<Assets<Mesh>>,
     mut stdmats: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn((
-        Camera3dBundle {
-            camera: Camera {
-                // hdr: true,
-                ..default()
-            },
-            // projection: OrthographicProjection {
-            //     scale: 2.0,
-            //     scaling_mode: ScalingMode::FixedVertical(2.0),
-            //     ..default()
-            // }
-            // .into(),
-            transform: Transform::from_xyz(10.0, 5.0, 5.0)
-                .looking_at(Vec3::new(2.0, 2.0, 0.0), Vec3::Y),
-            ..default()
-        },
-        // BloomSettings::default(),
-    ));
-
     commands.spawn(PointLightBundle {
         point_light: PointLight {
             intensity: 1500.0,

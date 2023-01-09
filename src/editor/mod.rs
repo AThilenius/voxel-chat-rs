@@ -15,17 +15,10 @@ impl Plugin for EditorPlugin {
     }
 }
 
-// The editor focuses in on a specific "Prefab", which is just a root entity. That entity, or any
-// one of it's children can be camera-focused to edit the voxel volume. That means that raycasts
-// need to be translate into the global space of the camera-focus entity before they are traced.
-//
-// For simplicity we'll want a pipelines of systems. Extract from entities, Transform, then write
-// back to entities.
-//
-
 #[derive(Resource)]
 pub struct EditorResource {
     pub prefab_editor: Option<PrefabEditor>,
+    pub camera_dolly: OrbitCameraDolly,
 }
 
 pub struct PrefabEditor {
@@ -45,11 +38,30 @@ pub struct EditorInput {
     pub ray_hit: Option<VoxelRayHit>,
 }
 
+pub struct OrbitCameraDolly {
+    pub azimuth: f32,
+    pub zenith: f32,
+    pub distance: f32,
+    pub pivot: Entity,
+    pub arm: Entity,
+}
+
 fn setup_test(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<VoxelMaterial>>,
 ) {
+    let arm = commands
+        .spawn(TransformBundle {
+            local: Transform::from_translation(Vec3::Z * 10.0),
+            ..default()
+        })
+        .id();
+    let pivot = commands
+        .spawn(TransformBundle::default())
+        .add_child(arm)
+        .id();
+
     let mut buffer = Buffer::default();
     let p = PbrProps {
         color: Rgba::from(Color::rgb(1.0, 0.0, 0.0)),
@@ -77,11 +89,6 @@ fn setup_test(
         buffer.set(WorldCoord((31, 31, x).into()), p);
     }
 
-    // buffer.set(WorldCoord((0, 0, 0).into()), p);
-    // buffer.set(WorldCoord((1, 0, 0).into()), p);
-    // buffer.set(WorldCoord((0, 0, 1).into()), p);
-    // buffer.set(WorldCoord((0, 1, 0).into()), p);
-
     // Create a Transform, translated by 1 unit in the X direction and rotated 45 degrees around the
     // y axis.
     let mesh: Mesh = (&buffer).into();
@@ -90,9 +97,9 @@ fn setup_test(
             mesh: meshes.add(mesh.clone()),
             material: materials.add(VoxelMaterial {}),
             transform: Transform {
-                translation: Vec3::new(1.0, 0.0, 0.0),
-                rotation: Quat::from_axis_angle(Vec3::Y, 60.0),
-                // scale: Vec3::ONE,
+                // translation: Vec3::new(1.0, 0.0, 0.0),
+                // rotation: Quat::from_axis_angle(Vec3::Y, 60.0),
+                scale: Vec3::splat(1.0 / 16.0),
                 ..default()
             },
             ..default()
@@ -107,41 +114,49 @@ fn setup_test(
             ephemeral_buffer: buffer.clone(),
             input: default(),
         }),
+        camera_dolly: OrbitCameraDolly {
+            azimuth: 0.0,
+            zenith: 0.0,
+            distance: 10.0,
+            pivot,
+            arm,
+        },
     });
 }
 
 fn editor_prep(
     mut voxel_editor: ResMut<EditorResource>,
+    camera: Query<(&GlobalTransform, &Camera)>,
     mouse_button_input: Res<Input<MouseButton>>,
     windows: Res<Windows>,
-    camera: Query<(&GlobalTransform, &Camera)>,
-    global_transform: Query<&GlobalTransform>,
+    global_transforms: Query<&GlobalTransform>,
 ) {
-    let prefab_editor = unwrap_or_return!(&mut voxel_editor.prefab_editor);
-    let (transform, camera) = camera.single();
+    let (camera_global_transform, camera) = camera.single();
     let window = unwrap_or_return!(windows.get_primary());
     let cursor = unwrap_or_return!(window.cursor_position());
-    let focus_transform = ok_or_return!(global_transform.get(prefab_editor.entity));
+
+    let prefab_editor = unwrap_or_return!(&mut voxel_editor.prefab_editor);
+    let focus_transform = ok_or_return!(global_transforms.get(prefab_editor.entity));
 
     // Create a ray from the camera at the cursor position, in the global space of the focused
     // entity.
-    let world_ray = camera.viewport_to_world(transform, cursor).unwrap();
+    let world_ray = camera
+        .viewport_to_world(camera_global_transform, cursor)
+        .unwrap();
 
     // Transform the ray into the local space of focus_transform and cast it.
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        let transform = focus_transform.affine().inverse();
-        let origin = transform.transform_point3(world_ray.origin);
-        let direction = transform.transform_vector3(world_ray.direction).normalize();
-        let local_ray = Ray { origin, direction };
-        let ray_hit = raycast_buffer_voxels(&prefab_editor.buffer, local_ray);
+    let transform = focus_transform.affine().inverse();
+    let origin = transform.transform_point3(world_ray.origin);
+    let direction = transform.transform_vector3(world_ray.direction).normalize();
+    let local_ray = Ray { origin, direction };
+    let ray_hit = raycast_buffer_voxels(&prefab_editor.buffer, local_ray);
 
-        prefab_editor.input = EditorInput {
-            input: mouse_button_input.clone(),
-            world_ray,
-            local_ray,
-            ray_hit,
-        };
-    }
+    prefab_editor.input = EditorInput {
+        input: mouse_button_input.clone(),
+        world_ray,
+        local_ray,
+        ray_hit,
+    };
 }
 
 fn editor_primary_logic(mut voxel_editor: ResMut<EditorResource>) {
