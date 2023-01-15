@@ -93,10 +93,12 @@ impl WorldCoord {
         ))
     }
 
-    fn iter(a: WorldCoord, b: WorldCoord) -> impl Iterator<Item = WorldCoord> {
-        (a.0.z..=b.0.z)
-            .flat_map(move |z| (a.0.y..=b.0.y).map(move |y| (y, z)))
-            .flat_map(move |(y, z)| (a.0.x..=b.0.x).map(move |x| WorldCoord(IVec3::new(x, y, z))))
+    pub fn iter_range(from: WorldCoord, to: WorldCoord) -> impl Iterator<Item = WorldCoord> {
+        let a = IVec3::min(from.0, to.0);
+        let b = IVec3::max(from.0, to.0);
+        (a.z..=b.z)
+            .flat_map(move |z| (a.y..=b.y).map(move |y| (y, z)))
+            .flat_map(move |(y, z)| (a.x..=b.x).map(move |x| WorldCoord(IVec3::new(x, y, z))))
     }
 }
 
@@ -120,7 +122,7 @@ impl ChunkCoord {
     pub fn iter_world_coords(&self) -> impl Iterator<Item = WorldCoord> {
         let first = self.first_cell_coord();
         let last = self.last_cell_coord();
-        WorldCoord::iter(first, last)
+        WorldCoord::iter_range(first, last)
     }
 }
 

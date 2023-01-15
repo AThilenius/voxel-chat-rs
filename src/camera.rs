@@ -13,7 +13,7 @@ impl Plugin for CameraPlugin {
 }
 
 #[derive(Resource)]
-pub struct CameraDolly {
+pub struct CameraController {
     pub target: CameraTarget,
     pub mouse_sensitive: f32,
     pub scroll_sensitive: f32,
@@ -28,26 +28,15 @@ pub enum CameraTarget {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera3dBundle {
-            camera: Camera {
-                // hdr: true,
-                ..default()
-            },
-            // projection: OrthographicProjection {
-            //     scale: 2.0,
-            //     scaling_mode: ScalingMode::FixedVertical(2.0),
-            //     ..default()
-            // }
-            // .into(),
-            transform: Transform::from_xyz(10.0, 5.0, 5.0)
-                .looking_at(Vec3::new(2.0, 2.0, 0.0), Vec3::Y),
-            ..default()
-        },
-        // BloomSettings::default(),
-    ));
+    // TODO: Switch on HDR when it's stable.
+    commands.spawn((Camera3dBundle {
+        camera: Camera { ..default() },
+        transform: Transform::from_xyz(10.0, 5.0, 5.0)
+            .looking_at(Vec3::new(2.0, 2.0, 0.0), Vec3::Y),
+        ..default()
+    },));
 
-    commands.insert_resource(CameraDolly {
+    commands.insert_resource(CameraController {
         target: CameraTarget::Point(Vec3::ZERO),
         mouse_sensitive: 10.0,
         scroll_sensitive: 10.0,
@@ -61,7 +50,7 @@ fn camera_pan_orbit(
     mut cameras: Query<&mut Transform, With<Camera>>,
     mut mouse_motion: EventReader<MouseMotion>,
     mut mouse_scroll: EventReader<MouseWheel>,
-    mut camera_dolly: ResMut<CameraDolly>,
+    mut camera_dolly: ResMut<CameraController>,
     mouse_button_input: Res<Input<MouseButton>>,
     global_transforms: Query<&GlobalTransform>,
 ) {
