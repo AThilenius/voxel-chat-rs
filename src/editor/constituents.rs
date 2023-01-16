@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{input::keyboard::KeyboardInput, prelude::*};
 
 use crate::voxel::{raycast_buffer_voxels, VoxelRayHit, WorldCoord};
 
@@ -17,6 +17,7 @@ pub struct EditorConstituents {
     pub ray_hit: Option<VoxelRayHit>,
     pub cursor: Vec2,
     pub drag_origin: Option<DragOrigin>,
+    pub keyboard: Input<KeyCode>,
     pub mouse_buttons: Input<MouseButton>,
 }
 
@@ -33,6 +34,7 @@ pub fn gather_editor_constituents(
     mut voxel_editor: ResMut<EditorResource>,
     camera: Query<(&GlobalTransform, &Camera)>,
     mouse_button_input: Res<Input<MouseButton>>,
+    keycode_input: Res<Input<KeyCode>>,
     windows: Res<Windows>,
     global_transforms: Query<&GlobalTransform>,
 ) {
@@ -93,6 +95,7 @@ pub fn gather_editor_constituents(
             cursor,
             drag_origin,
             mouse_buttons: mouse_button_input.clone(),
+            keyboard: keycode_input.clone(),
         }
     };
 }

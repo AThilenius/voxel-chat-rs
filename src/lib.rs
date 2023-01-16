@@ -1,10 +1,12 @@
 use std::f32::consts::*;
 
 use bevy::prelude::*;
-use bevy_egui::{EguiContext, EguiPlugin};
+use bevy_egui::EguiPlugin;
 use bevy_prototype_debug_lines::{DebugLines, DebugLinesPlugin};
 use bevy_rapier3d::prelude::*;
+use camera::CameraPlugin;
 use editor::EditorPlugin;
+use resize::ResizePlugin;
 use voxel::VoxelMaterial;
 
 #[macro_use]
@@ -12,6 +14,7 @@ mod macros;
 mod camera;
 mod editor;
 mod net;
+mod resize;
 mod serde_test;
 mod voxel;
 
@@ -22,20 +25,12 @@ pub fn core_main() {
         .add_plugin(RapierDebugRenderPlugin::default())
         .add_plugin(DebugLinesPlugin::default())
         .add_plugin(EguiPlugin)
+        .add_plugin(ResizePlugin)
         .add_plugin(EditorPlugin)
-        .add_plugin(camera::CameraPlugin)
-        // .add_plugin(VoxMeshPlugin::default())
-        // .add_plugin(GridTreeTestPlugin)
-        // .add_plugin(net::NetPlugin)
-        // .add_plugin(material_test::MaterialTestPlugin)
+        .add_plugin(CameraPlugin)
         .add_startup_system(setup_world_and_camera)
         .add_plugin(MaterialPlugin::<VoxelMaterial>::default())
-        // .add_startup_system(setup_vox_mesh)
-        // .add_startup_system(setup_physics)
-        // .add_startup_system(setup_animation)
         .add_system(draw_world_debug_lines)
-        // .add_system(apply_force_at_raycast)
-        // .add_system(ui_example)
         .run();
 }
 
@@ -58,12 +53,6 @@ fn setup_world_and_camera(
         mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
         material: stdmats.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..Default::default()
-    });
-}
-
-fn ui_example(mut egui_context: ResMut<EguiContext>) {
-    egui::Window::new("Hello").show(egui_context.ctx_mut(), |ui| {
-        ui.label("world");
     });
 }
 

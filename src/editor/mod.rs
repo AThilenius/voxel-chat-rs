@@ -1,10 +1,14 @@
 mod constituents;
+mod ui;
 
 use bevy::prelude::*;
 
 use crate::voxel::{Buffer, PbrProps, Rgba, VoxelMaterial, WorldCoord};
 
-use self::constituents::{gather_editor_constituents, EditorConstituents};
+use self::{
+    constituents::{gather_editor_constituents, EditorConstituents},
+    ui::editor_ui,
+};
 
 pub struct EditorPlugin;
 
@@ -12,6 +16,7 @@ impl Plugin for EditorPlugin {
     fn build(&self, app: &mut App) {
         app.add_startup_system(setup_test)
             .add_system(gather_editor_constituents)
+            .add_system(editor_ui.after(gather_editor_constituents))
             .add_system(editor_primary_logic.after(gather_editor_constituents));
     }
 }
@@ -23,7 +28,9 @@ pub struct EditorResource {
     pub entity: Entity,
     pub commit_buffer: Buffer,
     pub buffer: Buffer,
+    pub buffer_dirty: bool,
     pub material: PbrProps,
+    pub undo_stack: Vec<Buffer>,
 }
 
 fn setup_test(
@@ -81,7 +88,9 @@ fn setup_test(
         entity,
         commit_buffer: buffer.clone(),
         buffer: buffer.clone(),
+        buffer_dirty: false,
         material: p,
+        undo_stack: default(),
     });
 }
 
@@ -101,17 +110,44 @@ fn editor_primary_logic(
     ) {
         // Completely redraw the buffer if either left is down, or if it was just released.
         if mouse.pressed(MouseButton::Left) || mouse.just_released(MouseButton::Left) {
-            let p = voxel_editor.material;
+            let del = voxel_editor
+                .constituents
+                .keyboard
+                .pressed(KeyCode::LControl);
+
+            let p = if del {
+                default()
+            } else {
+                voxel_editor.material
+            };
+
             let start = drag_origin.voxel;
             let end = WorldCoord(ray_hit.world_coord.0 + ray_hit.normal.unwrap_or_default());
             for world_coord in WorldCoord::iter_range(start, end) {
+                voxel_editor.buffer_dirty = true;
                 voxel_editor.buffer.set(world_coord, p);
             }
         }
 
-        if mouse.just_released(MouseButton::Left) {
+        if mouse.just_released(MouseButton::Left) && voxel_editor.buffer_dirty {
             // Commit the buffer.
+            let undo_buffer = voxel_editor.commit_buffer.clone();
+            voxel_editor.undo_stack.push(undo_buffer);
             voxel_editor.commit_buffer = voxel_editor.buffer.clone();
+            voxel_editor.buffer_dirty = false;
+        }
+    }
+
+    // Handle undo (Ctrl + Z)
+    if voxel_editor
+        .constituents
+        .keyboard
+        .pressed(KeyCode::LControl)
+        && voxel_editor.constituents.keyboard.just_pressed(KeyCode::Z)
+    {
+        if let Some(undo_buffer) = voxel_editor.undo_stack.pop() {
+            voxel_editor.commit_buffer = undo_buffer.clone();
+            voxel_editor.buffer = undo_buffer;
         }
     }
 

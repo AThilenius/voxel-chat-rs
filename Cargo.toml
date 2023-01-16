@@ -11,6 +11,7 @@ bevy_egui = "0.17.1"
 bevy_prototype_debug_lines = { version = "0.9", features = ["3d"] }
 bevy_rapier3d = { version = "0.19", features = ["debug-render"] }
 bevy_vox_mesh = "0.5.0"
+crossbeam-channel = "0.5"
 egui = "0.19"
 im = "15.1"
 js-sys = "0.3"
@@ -29,6 +30,7 @@ web-sys = { version = "0.3", features = [
   "ProgressEvent",
   "WebSocket",
 ] }
+winit = "0.27"
 
 [profile.dev]
 opt-level = 1
