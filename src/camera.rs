@@ -44,7 +44,7 @@ fn setup_camera(mut commands: Commands) {
         scroll_sensitive: 5.0,
         azimuth: 0.0,
         zenith: std::f32::consts::PI / 4.0,
-        distance: 10.0,
+        distance: 100.0,
         margins: default(),
     });
 }
@@ -64,7 +64,7 @@ fn camera_pan_orbit(
     let scroll = mouse_scroll.iter().fold(0.0, |v, e| v + e.y);
     camera_controller.distance = (camera_controller.distance
         - (scroll * camera_controller.distance * scroll_mul))
-        .clamp(0.1, 200.0);
+        .clamp(0.1, 2000.0);
 
     if mouse_button_input.pressed(MouseButton::Right) {
         let pan = mouse_motion.iter().fold(Vec2::ZERO, |v, e| v + e.delta) * mouse_mul;

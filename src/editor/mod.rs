@@ -7,7 +7,7 @@ use crate::voxel::{Buffer, PbrProps, Rgba, VoxelMaterial, WorldCoord};
 
 use self::{
     constituents::{gather_editor_constituents, EditorConstituents},
-    ui::editor_ui,
+    ui::{editor_ui, Tree},
 };
 
 pub struct EditorPlugin;
@@ -31,6 +31,7 @@ pub struct EditorResource {
     pub buffer_dirty: bool,
     pub material: PbrProps,
     pub undo_stack: Vec<Buffer>,
+    pub tree: Tree,
 }
 
 fn setup_test(
@@ -65,32 +66,49 @@ fn setup_test(
         buffer.set(WorldCoord((31, 31, x).into()), p);
     }
 
-    // Create a Transform, translated by 1 unit in the X direction and rotated 45 degrees around the
-    // y axis.
     let mesh: Mesh = (&buffer).into();
+
+    // Spawn an entity tree with names
     let entity = commands
-        .spawn(MaterialMeshBundle {
-            mesh: meshes.add(mesh.clone()),
-            material: materials.add(VoxelMaterial {}),
-            transform: Transform {
-                // translation: Vec3::new(1.0, 0.0, 0.0),
-                // rotation: Quat::from_axis_angle(Vec3::Y, 60.0),
-                scale: Vec3::splat(1.0 / 16.0),
+        .spawn((Name::from("Root"), SpatialBundle::default()))
+        .id();
+
+    let child_1 = commands
+        .spawn((
+            Name::from("Child 1"),
+            MaterialMeshBundle {
+                mesh: meshes.add(mesh.clone()),
+                material: materials.add(VoxelMaterial {}),
+                transform: Transform::from_translation(Vec3::new(-17.0, 0.0, 0.0)),
                 ..default()
             },
-            ..default()
-        })
+        ))
         .id();
+
+    let child_2 = commands
+        .spawn((
+            Name::from("Child 2"),
+            MaterialMeshBundle {
+                mesh: meshes.add(mesh.clone()),
+                material: materials.add(VoxelMaterial {}),
+                transform: Transform::from_translation(Vec3::new(17.0, 0.0, 0.0)),
+                ..default()
+            },
+        ))
+        .id();
+
+    commands.entity(entity).push_children(&[child_1, child_2]);
 
     commands.insert_resource(EditorResource {
         constituents: default(),
         prefab_entity: entity,
-        entity,
+        entity: child_1,
         commit_buffer: buffer.clone(),
         buffer: buffer.clone(),
         buffer_dirty: false,
         material: p,
         undo_stack: default(),
+        tree: Tree::demo(),
     });
 }
 

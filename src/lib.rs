@@ -39,20 +39,15 @@ fn setup_world_and_camera(
     mut meshes: ResMut<Assets<Mesh>>,
     mut stdmats: ResMut<Assets<StandardMaterial>>,
 ) {
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            illuminance: 5000.0,
             shadows_enabled: true,
             ..default()
         },
-        transform: Transform::from_xyz(-4.0, 8.0, 4.0),
+        transform: Transform::from_rotation(Quat::from_axis_angle(Vec3::Y, PI / 4.0))
+            * Transform::from_rotation(Quat::from_axis_angle(Vec3::X, -PI / 4.0)),
         ..default()
-    });
-
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
-        material: stdmats.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..Default::default()
     });
 }
 
