@@ -1,4 +1,5 @@
 mod constituents;
+mod entity_buffer;
 mod ui;
 
 use bevy::prelude::*;
@@ -7,7 +8,8 @@ use crate::voxel::{Buffer, PbrProps, Rgba, VoxelMaterial, WorldCoord};
 
 use self::{
     constituents::{gather_editor_constituents, EditorConstituents},
-    ui::{editor_ui, Tree},
+    entity_buffer::EntityBuffer,
+    ui::editor_ui,
 };
 
 pub struct EditorPlugin;
@@ -26,12 +28,7 @@ pub struct EditorResource {
     pub constituents: EditorConstituents,
     pub prefab_entity: Entity,
     pub entity: Entity,
-    pub commit_buffer: Buffer,
-    pub buffer: Buffer,
-    pub buffer_dirty: bool,
     pub material: PbrProps,
-    pub undo_stack: Vec<Buffer>,
-    pub tree: Tree,
 }
 
 fn setup_test(
@@ -82,6 +79,12 @@ fn setup_test(
                 transform: Transform::from_translation(Vec3::new(-17.0, 0.0, 0.0)),
                 ..default()
             },
+            EntityBuffer {
+                commit_buffer: buffer.clone(),
+                buffer: buffer.clone(),
+                buffer_dirty: false,
+                undo_stack: default(),
+            },
         ))
         .id();
 
@@ -91,8 +94,18 @@ fn setup_test(
             MaterialMeshBundle {
                 mesh: meshes.add(mesh.clone()),
                 material: materials.add(VoxelMaterial {}),
-                transform: Transform::from_translation(Vec3::new(17.0, 0.0, 0.0)),
+                transform: Transform {
+                    translation: Vec3::new(17.0, 0.0, 0.0),
+                    rotation: Quat::from_euler(EulerRot::XYZ, 1.0, 1.0, 1.0),
+                    ..default()
+                },
                 ..default()
+            },
+            EntityBuffer {
+                commit_buffer: buffer.clone(),
+                buffer: buffer.clone(),
+                buffer_dirty: false,
+                undo_stack: default(),
             },
         ))
         .id();
@@ -103,12 +116,7 @@ fn setup_test(
         constituents: default(),
         prefab_entity: entity,
         entity: child_1,
-        commit_buffer: buffer.clone(),
-        buffer: buffer.clone(),
-        buffer_dirty: false,
         material: p,
-        undo_stack: default(),
-        tree: Tree::demo(),
     });
 }
 
@@ -116,11 +124,13 @@ fn editor_primary_logic(
     mut voxel_editor: ResMut<EditorResource>,
     mut mesh_handles: Query<&mut Handle<Mesh>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut entity_buffers: Query<&mut EntityBuffer>,
 ) {
     let mouse = voxel_editor.constituents.mouse_buttons.clone();
+    let mut entity_buffer = entity_buffers.get_mut(voxel_editor.entity).unwrap();
 
     // Reset the buffer every frame. This is a very cheap operation because of COW semantics.
-    voxel_editor.buffer = voxel_editor.commit_buffer.clone();
+    entity_buffer.buffer = entity_buffer.commit_buffer.clone();
 
     if let (Some(drag_origin), Some(ray_hit)) = (
         voxel_editor.constituents.drag_origin.clone(),
@@ -142,17 +152,17 @@ fn editor_primary_logic(
             let start = drag_origin.voxel;
             let end = WorldCoord(ray_hit.world_coord.0 + ray_hit.normal.unwrap_or_default());
             for world_coord in WorldCoord::iter_range(start, end) {
-                voxel_editor.buffer_dirty = true;
-                voxel_editor.buffer.set(world_coord, p);
+                entity_buffer.buffer_dirty = true;
+                entity_buffer.buffer.set(world_coord, p);
             }
         }
 
-        if mouse.just_released(MouseButton::Left) && voxel_editor.buffer_dirty {
+        if mouse.just_released(MouseButton::Left) && entity_buffer.buffer_dirty {
             // Commit the buffer.
-            let undo_buffer = voxel_editor.commit_buffer.clone();
-            voxel_editor.undo_stack.push(undo_buffer);
-            voxel_editor.commit_buffer = voxel_editor.buffer.clone();
-            voxel_editor.buffer_dirty = false;
+            let undo_buffer = entity_buffer.commit_buffer.clone();
+            entity_buffer.undo_stack.push(undo_buffer);
+            entity_buffer.commit_buffer = entity_buffer.buffer.clone();
+            entity_buffer.buffer_dirty = false;
         }
     }
 
@@ -163,12 +173,13 @@ fn editor_primary_logic(
         .pressed(KeyCode::LControl)
         && voxel_editor.constituents.keyboard.just_pressed(KeyCode::Z)
     {
-        if let Some(undo_buffer) = voxel_editor.undo_stack.pop() {
-            voxel_editor.commit_buffer = undo_buffer.clone();
-            voxel_editor.buffer = undo_buffer;
+        if let Some(undo_buffer) = entity_buffer.undo_stack.pop() {
+            entity_buffer.commit_buffer = undo_buffer.clone();
+            entity_buffer.buffer = undo_buffer;
         }
     }
 
     // Finalize
-    *mesh_handles.get_mut(voxel_editor.entity).unwrap() = meshes.add((&voxel_editor.buffer).into());
+    *mesh_handles.get_mut(voxel_editor.entity).unwrap() =
+        meshes.add((&entity_buffer.buffer).into());
 }

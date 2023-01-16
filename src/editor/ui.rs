@@ -3,26 +3,28 @@ use bevy_egui::EguiContext;
 use egui::{
     color::Hsva,
     color_picker::{color_picker_hsva_2d, Alpha},
-    CollapsingHeader, RichText, Slider, Ui,
+    CollapsingHeader, Slider, Ui,
 };
 
 use crate::{camera::CameraController, voxel::Rgba};
 
-use super::EditorResource;
+use super::{entity_buffer::EntityBuffer, EditorResource};
 
 pub fn editor_ui(
     mut voxel_editor: ResMut<EditorResource>,
     mut egui_context: ResMut<EguiContext>,
     mut camera_controller: ResMut<CameraController>,
-    name_children: Query<(&Name, Option<&Children>)>,
+    ui_query: Query<(&Name, Option<&Children>, Option<&EntityBuffer>)>,
+    entity_buffers: Query<&EntityBuffer>,
 ) {
+    let entity_buffer = entity_buffers.get(voxel_editor.entity).unwrap();
     camera_controller.margins.left = egui::SidePanel::left("left_panel")
         .resizable(true)
         .show(egui_context.ctx_mut(), |ui| {
             ui.label(format!("Entity: {:?}", voxel_editor.entity));
             ui.label(format!("Prefab Entity: {:?}", voxel_editor.prefab_entity));
-            ui.label(format!("Buffer dirty: {}", voxel_editor.buffer_dirty));
-            ui.label(format!("Undo stack: {}", voxel_editor.undo_stack.len()));
+            ui.label(format!("Buffer dirty: {}", entity_buffer.buffer_dirty));
+            ui.label(format!("Undo stack: {}", entity_buffer.undo_stack.len()));
 
             let color = Color::from(voxel_editor.material.color).as_rgba_f32();
             let mut hsva = Hsva::from_rgb([color[0], color[1], color[2]]);
@@ -54,7 +56,8 @@ pub fn editor_ui(
                     .text("Reflectance"),
             );
 
-            draw_entity_tree(ui, voxel_editor.prefab_entity, &name_children);
+            let prefab = voxel_editor.prefab_entity;
+            draw_entity_tree(ui, &mut voxel_editor, prefab, &ui_query);
         })
         .response
         .rect
@@ -63,82 +66,36 @@ pub fn editor_ui(
 
 fn draw_entity_tree(
     ui: &mut Ui,
+    voxel_editor: &mut EditorResource,
     entity: Entity,
-    name_children: &Query<(&Name, Option<&Children>)>,
+    query: &Query<(&Name, Option<&Children>, Option<&EntityBuffer>)>,
 ) {
-    let (name, children) = name_children.get(entity).unwrap();
+    let (name, children, entity_buffer) = query.get(entity).unwrap();
+    let name = format!(
+        "{}{}",
+        name.as_str(),
+        if voxel_editor.entity == entity {
+            " (active)"
+        } else {
+            ""
+        }
+    );
 
     if let Some(children) = children {
-        CollapsingHeader::new(name.as_str())
+        CollapsingHeader::new(name)
             .default_open(true)
             .show(ui, |ui| {
+                if entity_buffer.is_some() && ui.button("Activate").clicked() {
+                    voxel_editor.entity = entity;
+                }
                 for child in children.iter() {
-                    draw_entity_tree(ui, *child, name_children);
+                    draw_entity_tree(ui, voxel_editor, *child, query);
                 }
             });
     } else {
-        ui.label(name.as_str());
-    }
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Action {
-    Keep,
-    Delete,
-}
-
-#[derive(Clone, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Tree(Vec<Tree>);
-
-impl Tree {
-    pub fn demo() -> Self {
-        Self(vec![
-            Tree(vec![Tree::default(); 4]),
-            Tree(vec![Tree(vec![Tree::default(); 2]); 3]),
-        ])
-    }
-
-    pub fn ui(&mut self, ui: &mut Ui) -> Action {
-        self.ui_impl(ui, 0, "root")
-    }
-}
-
-impl Tree {
-    fn ui_impl(&mut self, ui: &mut Ui, depth: usize, name: &str) -> Action {
-        CollapsingHeader::new(name)
-            .default_open(depth < 1)
-            .show(ui, |ui| self.children_ui(ui, depth))
-            .body_returned
-            .unwrap_or(Action::Keep)
-    }
-
-    fn children_ui(&mut self, ui: &mut Ui, depth: usize) -> Action {
-        if depth > 0
-            && ui
-                .button(RichText::new("delete").color(ui.visuals().warn_fg_color))
-                .clicked()
-        {
-            return Action::Delete;
+        ui.label(name);
+        if entity_buffer.is_some() && ui.button("Activate").clicked() {
+            voxel_editor.entity = entity;
         }
-
-        self.0 = std::mem::take(self)
-            .0
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, mut tree)| {
-                if tree.ui_impl(ui, depth + 1, &format!("child #{}", i)) == Action::Keep {
-                    Some(tree)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
-        if ui.button("+").clicked() {
-            self.0.push(Tree::default());
-        }
-
-        Action::Keep
     }
 }

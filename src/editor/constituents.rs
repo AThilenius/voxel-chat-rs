@@ -1,8 +1,8 @@
-use bevy::{input::keyboard::KeyboardInput, prelude::*};
+use bevy::prelude::*;
 
 use crate::voxel::{raycast_buffer_voxels, VoxelRayHit, WorldCoord};
 
-use super::EditorResource;
+use super::{entity_buffer::EntityBuffer, EditorResource};
 
 /// All the necessary 'input' state for the editor to function, including pre-processed rays, inputs
 /// and so on.
@@ -37,6 +37,7 @@ pub fn gather_editor_constituents(
     keycode_input: Res<Input<KeyCode>>,
     windows: Res<Windows>,
     global_transforms: Query<&GlobalTransform>,
+    entity_buffers: Query<&EntityBuffer>,
 ) {
     // Gather constituents
     voxel_editor.constituents = {
@@ -61,7 +62,8 @@ pub fn gather_editor_constituents(
             Ray { origin, direction }
         };
 
-        let ray_hit = raycast_buffer_voxels(&voxel_editor.commit_buffer, local_ray);
+        let entity_buffer = entity_buffers.get(voxel_editor.entity).unwrap();
+        let ray_hit = raycast_buffer_voxels(&entity_buffer.commit_buffer, local_ray);
 
         let drag_origin = {
             if mouse_button_input.just_pressed(MouseButton::Left)
